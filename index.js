@@ -28,8 +28,6 @@ const player = new PlayerManager({
       firstStream: new YTexec({ cookies: "./cookies.json" }).getStream, // fix stream mạnh hơn
     }),
 
-    new SoundCloudPlugin(),
-
     new SpotifyPlugin({
       clientId: process.env.SPOTIFY_CLIENT_ID,
       clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
