@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { Client, GatewayIntentBits } from "discord.js";
+import { Client, GatewayIntentBits, EmbedBuilder } from "discord.js";
 import { PlayerManager } from "ziplayer";
 import {
   SoundCloudPlugin,
@@ -89,6 +89,86 @@ client.once("ready", () => {
 
 /* ================= COMMAND ================= */
 
+function findChannel(guild, name) {
+  return guild.channels.cache.find((c) => c.name === name && c.isTextBased());
+}
+
+client.on("guildMemberAdd", async (member) => {
+  const guild = member.guild;
+
+  // 🔎 tìm channel theo tên
+  const chung = findChannel(guild, "chung");
+  const rules = findChannel(guild, "rules");
+  const nhac = findChannel(guild, "nhạc");
+
+  const channel = chung || guild.systemChannel; // fallback
+
+  if (!channel) return;
+  const eServer = "<a:server:123456789012345678>";
+  const eChat = "<a:chat:123456789012345678>";
+  const eRule = "<a:rule:123456789012345678>";
+  const eMusic = "<a:music:123456789012345678>";
+
+  const embed = new EmbedBuilder()
+    .setColor(0x2b2d31)
+    .setAuthor({
+      name: "you need to eat potatoes",
+      iconURL: guild.iconURL(),
+    })
+    .setTitle(`WELCOME`)
+    .setDescription(
+      `👉 Server: ${chung ? `<#${chung.id}>` : "#chung"}\n\n` +
+        `📌 nói xàm lồn: ${chung ? `<#${chung.id}>` : "#chung"}\n` +
+        `📜 luật: ${rules ? `<#${rules.id}>` : "#rules"}\n` +
+        `🎵 mở nhạc: ${nhac ? `<#${nhac.id}>` : "#nhac"}\n\n` +
+        `you need to eat potatoes`,
+    )
+    .setThumbnail(member.user.displayAvatarURL());
+
+  channel.send({
+    content: `Chào mừng <@${member.id}> đến với server ${member.guild.name}`,
+    embeds: [embed],
+  });
+});
+
+client.on("guildMemberRemove", async (member) => {
+  const guild = member.guild;
+
+  const chung = findChannel(guild, "chung");
+  const rules = findChannel(guild, "rules");
+  const nhac = findChannel(guild, "nhac");
+
+  const channel = chung || guild.systemChannel;
+  if (!channel) return;
+
+  const eServer = "<a:server:123456789012345678>";
+  const eChat = "<a:chat:123456789012345678>";
+  const eRule = "<a:rule:123456789012345678>";
+  const eMusic = "<a:music:123456789012345678>";
+
+  const embed = new EmbedBuilder()
+    .setColor(0xff4d4d)
+    .setAuthor({
+      name: "you need to eat potatoes",
+      iconURL: guild.iconURL(),
+    })
+    .setTitle(`GOODBYE`)
+    .setDescription(
+      `Cút mẹ mày đi` +
+        `${eServer}👉 Server: ${chung ? `<#${chung.id}>` : "#chung"}\n\n` +
+        `📌 nói xàm lồn: ${chung ? `<#${chung.id}>` : "#chung"}\n` +
+        `📜 luật: ${rules ? `<#${rules.id}>` : "#rules"}\n` +
+        `🎵 mở nhạc: ${nhac ? `<#${nhac.id}>` : "#nhac"}\n\n` +
+        `you need to eat potatoes`,
+    )
+    .setThumbnail(member.user.displayAvatarURL());
+
+  channel.send({
+    content: `Cảm ơn <@${member.id}> đã cook khỏi server ${member.guild.name}`,
+    embeds: [embed],
+  });
+});
+
 client.on("messageCreate", async (message) => {
   if (message.author.bot || !message.guild) return;
   if (!message.content.startsWith(prefix)) return;
@@ -116,47 +196,47 @@ client.on("messageCreate", async (message) => {
 
       let query = args.join(" ");
 
-      if (query.includes("spotify.com/playlist")) {
-        try {
-          const playlistId = query.split("playlist/")[1].split("?")[0];
+      // if (query.includes("spotify.com/playlist")) {
+      //   try {
+      //     const playlistId = query.split("playlist/")[1].split("?")[0];
 
-          let offset = 0;
-          let allTracks = [];
+      //     let offset = 0;
+      //     let allTracks = [];
 
-          while (true) {
-            const res = await spotifyApi.getPlaylistTracks(playlistId, {
-              offset,
-              limit: 100,
-            });
+      //     while (true) {
+      //       const res = await spotifyApi.getPlaylistTracks(playlistId, {
+      //         offset,
+      //         limit: 100,
+      //       });
 
-            allTracks.push(...res.body.items);
+      //       allTracks.push(...res.body.items);
 
-            if (res.body.items.length < 100) break;
-            offset += 100;
-          }
+      //       if (res.body.items.length < 100) break;
+      //       offset += 100;
+      //     }
 
-          if (!allTracks.length)
-            return message.channel.send("❌ Playlist rỗng");
+      //     if (!allTracks.length)
+      //       return message.channel.send("❌ Playlist rỗng");
 
-          for (const item of allTracks) {
-            const t = item.track;
-            if (!t) continue;
+      //     for (const item of allTracks) {
+      //       const t = item.track;
+      //       if (!t) continue;
 
-            const searchText = `${t.name} ${t.artists[0].name}`;
-            await newQueue.play(searchText);
+      //       const searchText = `${t.name} ${t.artists[0].name}`;
+      //       await newQueue.play(searchText);
 
-            // chống spam request
-            await new Promise((r) => setTimeout(r, 200));
-          }
+      //       // chống spam request
+      //       await new Promise((r) => setTimeout(r, 200));
+      //     }
 
-          return message.channel.send(
-            `✅ Đã thêm playlist (${allTracks.length} bài)`,
-          );
-        } catch (err) {
-          console.log(err);
-          return message.channel.send("❌ Lỗi Spotify playlist");
-        }
-      }
+      //     return message.channel.send(
+      //       `✅ Đã thêm playlist (${allTracks.length} bài)`,
+      //     );
+      //   } catch (err) {
+      //     console.log(err);
+      //     return message.channel.send("❌ Lỗi Spotify playlist");
+      //   }
+      // }
 
       await newQueue.play(query);
     } catch (e) {
