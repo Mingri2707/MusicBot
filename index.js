@@ -9,6 +9,12 @@ import {
 } from "@ziplayer/plugin";
 import SpotifyWebApi from "spotify-web-api-node";
 import { YTexec } from "@ziplayer/ytexecplug";
+import spotifyUrlInfo from "spotify-url-info";
+import fetch from "node-fetch";
+
+const { getData, getPreview, getTracks } = spotifyUrlInfo(fetch);
+
+const spotifyFetch = (url) => fetch(url).then((r) => r.json());
 
 const prefix = "k";
 
@@ -25,7 +31,7 @@ const client = new Client({
 const player = new PlayerManager({
   plugins: [
     new YouTubePlugin({
-      firstStream: new YTexec({ cookies: "./cookies.json" }).getStream, // fix stream mạnh hơn
+      firstStream: new YTexec().getStream, // fix stream mạnh hơn
     }),
 
     new SpotifyPlugin({
@@ -38,23 +44,6 @@ const player = new PlayerManager({
     }),
   ],
 });
-
-const spotifyApi = new SpotifyWebApi({
-  clientId: process.env.SPOTIFY_CLIENT_ID,
-  clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
-});
-
-// lấy access token
-async function refreshSpotifyToken() {
-  const data = await spotifyApi.clientCredentialsGrant();
-  spotifyApi.setAccessToken(data.body.access_token);
-}
-
-// gọi lần đầu
-await refreshSpotifyToken();
-
-// refresh mỗi 50 phút
-setInterval(refreshSpotifyToken, 50 * 60 * 1000);
 
 /* ================= PLAYER EVENTS ================= */
 
@@ -181,7 +170,6 @@ client.on("messageCreate", async (message) => {
   /* ========= PLAY ========= */
   if (command === "play") {
     if (!args[0]) return message.channel.send("❌ | Nhập tên bài hoặc link");
-
     if (!message.member.voice.channel)
       return message.channel.send("❌ | Vào voice trước!");
 
@@ -194,50 +182,53 @@ client.on("messageCreate", async (message) => {
       if (!newQueue.connection)
         await newQueue.connect(message.member.voice.channel);
 
-      let query = args.join(" ");
+      const query = args.join(" ");
 
-      // if (query.includes("spotify.com/playlist")) {
-      //   try {
-      //     const playlistId = query.split("playlist/")[1].split("?")[0];
+      // Xử lý Spotify playlist không cần API key
+      if (query.includes("spotify.com/playlist")) {
+        try {
+          const tracks = await getTracks(query);
 
-      //     let offset = 0;
-      //     let allTracks = [];
+          if (!tracks?.length)
+            return message.channel.send("❌ Playlist rỗng hoặc không đọc được");
 
-      //     while (true) {
-      //       const res = await spotifyApi.getPlaylistTracks(playlistId, {
-      //         offset,
-      //         limit: 100,
-      //       });
+          message.channel.send(
+            `⏳ Đang thêm **${tracks.length}** bài vào queue...`,
+          );
 
-      //       allTracks.push(...res.body.items);
+          for (const track of tracks) {
+            // Build query chuẩn hơn để YouTube tìm đúng bài
+            const searchText = `${track.name} ${track.artist} official audio`;
+            try {
+              await newQueue.play(searchText);
+            } catch (e) {
+              console.log(`[Skip] ${searchText}:`, e.message);
+            }
+            await new Promise((r) => setTimeout(r, 300));
+          }
 
-      //       if (res.body.items.length < 100) break;
-      //       offset += 100;
-      //     }
+          return message.channel.send(`✅ Đã thêm **${tracks.length}** bài`);
+        } catch (err) {
+          console.log("[Spotify Playlist]", err);
+          return message.channel.send(
+            `❌ Lỗi đọc playlist: ${err?.message ?? err}`,
+          );
+        }
+      }
 
-      //     if (!allTracks.length)
-      //       return message.channel.send("❌ Playlist rỗng");
+      // Spotify track đơn
+      if (query.includes("spotify.com/track")) {
+        try {
+          const preview = await getPreview(query);
+          const searchText = `${preview.title} ${preview.artist} official audio`;
+          return await newQueue.play(searchText);
+        } catch (err) {
+          console.log("[Spotify Track]", err);
+          return message.channel.send("❌ Không đọc được track Spotify");
+        }
+      }
 
-      //     for (const item of allTracks) {
-      //       const t = item.track;
-      //       if (!t) continue;
-
-      //       const searchText = `${t.name} ${t.artists[0].name}`;
-      //       await newQueue.play(searchText);
-
-      //       // chống spam request
-      //       await new Promise((r) => setTimeout(r, 200));
-      //     }
-
-      //     return message.channel.send(
-      //       `✅ Đã thêm playlist (${allTracks.length} bài)`,
-      //     );
-      //   } catch (err) {
-      //     console.log(err);
-      //     return message.channel.send("❌ Lỗi Spotify playlist");
-      //   }
-      // }
-
+      // YouTube link hoặc tìm theo tên
       await newQueue.play(query);
     } catch (e) {
       console.log(e);
