@@ -165,10 +165,10 @@ client.on("guildMemberAdd", async (member) => {
   const channel = welcome || guild.systemChannel; // fallback
 
   if (!channel) return;
-  const eServer = "<a:server:123456789012345678>";
-  const eChat = "<a:chat:123456789012345678>";
-  const eRule = "<a:rule:123456789012345678>";
-  const eMusic = "<a:music:123456789012345678>";
+  const eChat = "<a:idk:1253523454548901958>";
+  const eRule = "<a:bongocat:1253523428170924092>";
+  const eMusic = "<a:Pepe_Shoot:1253523483468501032> ";
+  const eSheep = "<a:sheep:1253523509720911996>";
 
   const embed = new EmbedBuilder()
     .setColor(0x2b2d31)
@@ -178,11 +178,10 @@ client.on("guildMemberAdd", async (member) => {
     })
     .setTitle(`WELCOME`)
     .setDescription(
-      `👉 Server: ${noixamlol ? `<#${noixamlol.id}>` : "#noixamlol"}\n\n` +
-        `📌 nói xàm lồn: ${noixamlol ? `<#${noixamlol.id}>` : "#noixamlol"}\n` +
-        `📜 luật: ${rules ? `<#${rules.id}>` : "#rules"}\n` +
-        `🎵 mở nhạc: ${nhac ? `<#${nhac.id}>` : "#nhac"}\n\n` +
-        `you need to eat potatoes`,
+      `${eChat} nơi xàm lồn: ${noixamlol ? `<#${noixamlol.id}>` : "#noixamlol"}\n` +
+        `${eRule}: ${rules ? `<#${rules.id}>` : "#rules"}\n` +
+        `${eMusic} mở nhạc: ${nhac ? `<#${nhac.id}>` : "#nhac"}\n\n` +
+        `${eSheep}you need to eat potatoes`,
     )
     .setThumbnail(member.user.displayAvatarURL());
 
@@ -198,11 +197,6 @@ client.on("guildMemberRemove", async (member) => {
 
   const channel = goodbye || guild.systemChannel;
   if (!channel) return;
-
-  const eServer = "<a:server:123456789012345678>";
-  const eChat = "<a:chat:123456789012345678>";
-  const eRule = "<a:rule:123456789012345678>";
-  const eMusic = "<a:music:123456789012345678>";
 
   const embed = new EmbedBuilder()
     .setColor(0xff4d4d)
@@ -380,9 +374,7 @@ client.on("guildDelete", (guild) => {
   const embed = new EmbedBuilder()
     .setColor(0xff4d4d)
     .setTitle("Bot rời server")
-    .setDescription(
-      `❌ Bot đã rời khỏi server: **${guild.name}**\nID: ${guild.id}\nThành viên: ${guild.memberCount}`,
-    )
+    .setDescription(`Bố cook nhé các con`)
     .setTimestamp();
 
   logChannel.send({ embeds: [embed] });
